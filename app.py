@@ -82,10 +82,18 @@ def main():
             df = pd.read_csv(uploaded_csv)
             initial_time = get_initial_time(h264_video_path)
             end_time = get_video_end_time(h264_video_path)
-            end_time_str = end_time
-            initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S')
+            
+            if initial_time is not None:
+                initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S')
+            else:
+                initial_time_dt = None
+            
+            if end_time is not None:
+                end_time_str = end_time
+            else:
+                end_time_str = None
 
-            if not df.empty:
+            if not df.empty and initial_time_dt and end_time_str:
                 col1, col2 = st.columns(2)
                 with col1:
                     column = st.selectbox('Select a column', df.columns.tolist(), index=0)
@@ -159,7 +167,7 @@ def main():
                     else:
                         st.write("No matching value found in the selected column. Playing from the start.")
             else:
-                st.write("CSV file is empty.")
+                st.write("CSV file is empty or video time information is missing.")
     else:
         st.write("Upload a video file to start.")
 
