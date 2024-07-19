@@ -14,7 +14,6 @@ if platform.system() == "Windows":
 else:
     pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
-
 def convert_to_h264(input_video_path, output_video_path):
     command = [
         'ffmpeg', '-y',
@@ -24,17 +23,24 @@ def convert_to_h264(input_video_path, output_video_path):
     ]
     subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+def preprocess_frame(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.fastNlMeansDenoising(gray, h=30)
+    gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=[255, 255, 255])
+    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    return thresh
 
 def get_time_from_frame(img):
-    custom_config = r'--oem 3 --psm 6'
-    text = pytesseract.image_to_string(img, config=custom_config)
+    custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789:'
+    processed_img = preprocess_frame(img)
+    text = pytesseract.image_to_string(processed_img, config=custom_config)
     st.write("OCR Output:", text)  # Debug: Show the OCR output
     pattern = re.compile(r'\d{2}:\d{2}:\d{2}')
     res = pattern.search(text)
     if res:
         return res.group(0)
     return None
-
 
 def get_initial_time(video_path):
     vid = cv2.VideoCapture(video_path)
@@ -46,7 +52,6 @@ def get_initial_time(video_path):
         return get_time_from_frame(img)
     return None
 
-
 def get_video_end_time(video_path):
     vid = cv2.VideoCapture(video_path)
     total_frames = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -57,7 +62,6 @@ def get_video_end_time(video_path):
         st.image(img, caption="Last Frame")  # Debug: Show the last frame
         return get_time_from_frame(img)
     return None
-
 
 def main():
     st.set_page_config(page_title="Video Player", page_icon="📹", layout="centered")
@@ -175,7 +179,6 @@ def main():
                 st.write("CSV file is empty or video time information is missing.")
     else:
         st.write("Upload a video file to start.")
-
 
 if __name__ == "__main__":
     main()
