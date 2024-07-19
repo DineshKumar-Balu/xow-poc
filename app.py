@@ -81,7 +81,9 @@ def main():
         if uploaded_csv:
             df = pd.read_csv(uploaded_csv)
             initial_time = get_initial_time(h264_video_path)
+            st.write(initial_time)
             end_time = get_video_end_time(h264_video_path)
+            st.write(end_time)
             end_time_str = end_time
             initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S') if initial_time else None
 
