@@ -48,12 +48,12 @@ def preprocess_frame(img):
     return adjusted
 
 def get_time_from_frame(img):
-    custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789:'
+    custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789:APM'
     processed_img = preprocess_frame(img)
     st.image(processed_img, caption="Processed Frame for OCR")  # Debug: Show the processed frame
     text = pytesseract.image_to_string(processed_img, config=custom_config)
     st.write("OCR Output:", text)  # Debug: Show the OCR output
-    pattern = re.compile(r'\d{2}:\d{2}:\d{2}')
+    pattern = re.compile(r'\d{2}:\d{2}:\d{2} [AP]M')
     res = pattern.search(text)
     if res:
         return res.group(0)
@@ -110,7 +110,7 @@ def main():
             st.write("End Time:", end_time)
             
             if initial_time is not None:
-                initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S')
+                initial_time_dt = datetime.strptime(initial_time, '%I:%M:%S %p')
             else:
                 initial_time_dt = None
             
@@ -134,7 +134,7 @@ def main():
                         st.session_state.previous_display = display
                         st.experimental_rerun()
 
-                    filtered_df = df[df[column].astype(str) == display]
+                    filtered_df = df[df[column].astype str == display]
                     st.write("Filtered Data:", filtered_df)
 
                     if not filtered_df.empty:
@@ -146,10 +146,10 @@ def main():
                             time_str = time_parts[-1]
 
                             try:
-                                extracted_time_dt = datetime.strptime(time_str, '%H:%M:%S')
+                                extracted_time_dt = datetime.strptime(time_str, '%I:%M:%S %p')
 
                                 # Ensure the extracted time is within the valid range
-                                if initial_time_dt <= extracted_time_dt <= datetime.strptime(end_time_str, '%H:%M:%S'):
+                                if initial_time_dt <= extracted_time_dt <= datetime.strptime(end_time_str, '%I:%M:%S %p'):
                                     extracted_time_seconds = (extracted_time_dt - initial_time_dt).total_seconds()
                                     jump_seconds = 0
                                     if initial_time and end_time:
@@ -172,7 +172,7 @@ def main():
                                             )
 
                                         jump_time_dt = datetime.strptime(
-                                            st.session_state.jump_time_input, '%H:%M:%S'
+                                            st.session_state.jump_time_input, '%I:%M:%S %p'
                                         ) if st.session_state.jump_time_input else 0
 
                                         if jump_time_dt and jump_time_dt >= extracted_time_dt:
