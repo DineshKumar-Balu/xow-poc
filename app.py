@@ -28,6 +28,7 @@ def convert_to_h264(input_video_path, output_video_path):
 def get_time_from_frame(img):
     custom_config = r'--oem 3 --psm 6'
     text = pytesseract.image_to_string(img, config=custom_config)
+    st.write("OCR Output:", text)  # Debug: Show the OCR output
     pattern = re.compile(r'\d{2}:\d{2}:\d{2}')
     res = pattern.search(text)
     if res:
@@ -41,6 +42,7 @@ def get_initial_time(video_path):
     is_success, img = vid.read()
     vid.release()
     if is_success:
+        st.image(img, caption="First Frame")  # Debug: Show the first frame
         return get_time_from_frame(img)
     return None
 
@@ -52,6 +54,7 @@ def get_video_end_time(video_path):
     is_success, img = vid.read()
     vid.release()
     if is_success:
+        st.image(img, caption="Last Frame")  # Debug: Show the last frame
         return get_time_from_frame(img)
     return None
 
@@ -81,8 +84,9 @@ def main():
         if uploaded_csv:
             df = pd.read_csv(uploaded_csv)
             initial_time = get_initial_time(h264_video_path)
-            st.write(initial_time)
+            st.write("Initial Time:", initial_time)
             end_time = get_video_end_time(h264_video_path)
+            st.write("End Time:", end_time)
             
             if initial_time is not None:
                 initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S')
