@@ -35,18 +35,13 @@ def extract_timestamps_from_video(video_path, fps, nth_seconds):
         
         if frame_exists and frame_num % (fps * nth_seconds) == 0:
             secs = round(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000)
-            print("Frame {} @{}s".format(frame_num, secs))
+            st.write("Frame {} @{}s".format(frame_num, secs))
             
             x, y, w, h = 0, 0, 850, 50
             timestamp_crop = frame[y:y+h, x:x+w]
-            cv2.imshow('timestamp', timestamp_crop)
-            
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
             
             timestamp_grey = cv2.cvtColor(timestamp_crop, cv2.COLOR_BGR2GRAY)
             _, timestamp_thresh = cv2.threshold(timestamp_grey, 127, 255, cv2.THRESH_BINARY)
-            cv2.imshow("thresholded timestamp", timestamp_thresh)
             
             candidate_str = pytesseract.image_to_string(timestamp_grey, config='--psm 7')
             regex_str = r'Date:\s(\d{4}-\d{2}-\d{2})\sTime:\s(\d{2}:\d{2}:\d{2}\s(?:AM|PM))\sFrame:\s(\d{2}:\d{2}:\d{2}:\d{2})'
@@ -54,11 +49,10 @@ def extract_timestamps_from_video(video_path, fps, nth_seconds):
             match = re.match(regex_str, candidate_str)
             if match:
                 date_str, time_str, frame_str = match.groups()
-                print("** Date: {} Time: {} Frame: {} @ {}s".format(date_str, time_str, frame_str, secs))
+                st.write("** Date: {} Time: {} Frame: {} @ {}s".format(date_str, time_str, frame_str, secs))
                 data.append([date_str, time_str, frame_str, secs])
     
     cap.release()
-    cv2.destroyAllWindows()
     return data
 
 def main():
