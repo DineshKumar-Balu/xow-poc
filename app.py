@@ -37,7 +37,7 @@ def get_time_from_frame(img):
 
 def get_initial_time(video_path):
     vid = cv2.VideoCapture(video_path)
-    vid.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Start at the first frame
+    vid.set(cv2.CAP_PROP_POS_FRAMES, 2)  # Start at the first frame
     is_success, img = vid.read()
     vid.release()
     if is_success:
