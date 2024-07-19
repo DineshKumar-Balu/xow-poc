@@ -28,12 +28,22 @@ def preprocess_frame(img):
     gray = cv2.fastNlMeansDenoising(gray, h=30)
     gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     gray = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=[255, 255, 255])
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    
+    # Sharpening
+    kernel = np.array([[0, -1, 0], [-1, 5,-1], [0, -1, 0]])
+    sharpened = cv2.filter2D(gray, -1, kernel)
+    
+    blurred = cv2.GaussianBlur(sharpened, (5, 5), 0)
     _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # Adaptive Thresholding
+    adaptive_thresh = cv2.adaptiveThreshold(thresh, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    eroded = cv2.erode(thresh, kernel, iterations=1)
+    eroded = cv2.erode(adaptive_thresh, kernel, iterations=1)
     dilated = cv2.dilate(eroded, kernel, iterations=1)
     adjusted = cv2.convertScaleAbs(dilated, alpha=1.5, beta=50)
+    
     return adjusted
 
 def get_time_from_frame(img):
