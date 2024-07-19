@@ -14,7 +14,6 @@ if platform.system() == "Windows":
 else:
     pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
-
 def convert_to_h264(input_video_path, output_video_path):
     command = [
         'ffmpeg', '-y',
@@ -23,7 +22,6 @@ def convert_to_h264(input_video_path, output_video_path):
         output_video_path
     ]
     subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
 
 def get_time_from_frame(img):
     custom_config = r'--oem 3 --psm 6'
@@ -34,7 +32,6 @@ def get_time_from_frame(img):
         return res.group(0)
     return None
 
-
 def get_initial_time(video_path):
     vid = cv2.VideoCapture(video_path)
     vid.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Start at the first frame
@@ -43,7 +40,6 @@ def get_initial_time(video_path):
     if is_success:
         return get_time_from_frame(img)
     return None
-
 
 def get_video_end_time(video_path):
     vid = cv2.VideoCapture(video_path)
@@ -54,7 +50,6 @@ def get_video_end_time(video_path):
     if is_success:
         return get_time_from_frame(img)
     return None
-
 
 def main():
     st.set_page_config(page_title="Video Player", page_icon="📹", layout="centered")
@@ -83,86 +78,94 @@ def main():
             initial_time = get_initial_time(h264_video_path)
             end_time = get_video_end_time(h264_video_path)
             end_time_str = end_time
-            initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S')
 
-            if not df.empty:
-                col1, col2 = st.columns(2)
-                with col1:
-                    column = st.selectbox('Select a column', df.columns.tolist(), index=0)
+            if initial_time and end_time:
+                initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S')
+                end_time_dt = datetime.strptime(end_time_str, '%H:%M:%S')
 
-                with col2:
-                    display_options = ["Select"] + df[column].astype(str).tolist()
-                    display = st.selectbox("Select a value", display_options, index=0)
+                if not df.empty:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        column = st.selectbox('Select a column', df.columns.tolist(), index=0)
 
-                if column and display != "Select":
-                    if st.session_state.previous_display != display:
-                        st.session_state.jump_time_input = "00:00:00"
-                        st.session_state.previous_display = display
-                        st.experimental_rerun()
+                    with col2:
+                        display_options = ["Select"] + df[column].astype(str).tolist()
+                        display = st.selectbox("Select a value", display_options, index=0)
 
-                    filtered_df = df[df[column].astype(str) == display]
-                    st.write("Filtered Data:", filtered_df)
+                    if column and display != "Select":
+                        if st.session_state.previous_display != display:
+                            st.session_state.jump_time_input = "00:00:00"
+                            st.session_state.previous_display = display
+                            st.experimental_rerun()
 
-                    if not filtered_df.empty:
-                        date_time_str = filtered_df["DATE AND TIME"].iloc[0]
+                        filtered_df = df[df[column].astype(str) == display]
+                        st.write("Filtered Data:", filtered_df)
 
-                        # Extract time and convert to seconds
-                        time_parts = date_time_str.split()
-                        if len(time_parts) > 0:
-                            time_str = time_parts[-1]
+                        if not filtered_df.empty:
+                            date_time_str = filtered_df["DATE AND TIME"].iloc[0]
 
-                            try:
-                                extracted_time_dt = datetime.strptime(time_str, '%H:%M:%S')
+                            # Extract time and convert to seconds
+                            time_parts = date_time_str.split()
+                            if len(time_parts) > 0:
+                                time_str = time_parts[-1]
 
-                                # Ensure the extracted time is within the valid range
-                                if initial_time_dt <= extracted_time_dt <= datetime.strptime(end_time_str, '%H:%M:%S'):
-                                    extracted_time_seconds = (extracted_time_dt - initial_time_dt).total_seconds()
-                                    jump_seconds = 0
-                                    if initial_time and end_time:
-                                        c1, c2 = st.columns(2)
-                                        with c1:
-                                            st.write("Initial Time from Video:", initial_time)
-                                        with c2:
-                                            st.write("End Time from Video:", end_time)
+                                try:
+                                    extracted_time_dt = datetime.strptime(time_str, '%H:%M:%S')
 
-                                        col1, col2 = st.columns(2)
-                                        with col1:
-                                            st.write("**Start Time**")
-                                            start_time_input = st.text_input("", initial_time, key="start_time")
-                                        with col2:
-                                            st.write("**Jump Time**")
-                                            st.session_state.jump_time_input = st.text_input(
-                                                "",
-                                                st.session_state.jump_time_input,
-                                                key="jump_time"
-                                            )
+                                    # Ensure the extracted time is within the valid range
+                                    if initial_time_dt <= extracted_time_dt <= end_time_dt:
+                                        extracted_time_seconds = (extracted_time_dt - initial_time_dt).total_seconds()
+                                        jump_seconds = 0
+                                        if initial_time and end_time:
+                                            c1, c2 = st.columns(2)
+                                            with c1:
+                                                st.write("Initial Time from Video:", initial_time)
+                                            with c2:
+                                                st.write("End Time from Video:", end_time)
 
-                                        jump_time_dt = datetime.strptime(
-                                            st.session_state.jump_time_input, '%H:%M:%S'
-                                        ) if st.session_state.jump_time_input else 0
+                                            col1, col2 = st.columns(2)
+                                            with col1:
+                                                st.write("**Start Time**")
+                                                start_time_input = st.text_input("", initial_time, key="start_time")
+                                            with col2:
+                                                st.write("**Jump Time**")
+                                                st.session_state.jump_time_input = st.text_input(
+                                                    "",
+                                                    st.session_state.jump_time_input,
+                                                    key="jump_time"
+                                                )
 
-                                        if jump_time_dt and jump_time_dt >= extracted_time_dt:
-                                            jump_seconds = (jump_time_dt - extracted_time_dt).total_seconds()
+                                            try:
+                                                jump_time_dt = datetime.strptime(
+                                                    st.session_state.jump_time_input, '%H:%M:%S'
+                                                ) if st.session_state.jump_time_input else None
+                                            except ValueError:
+                                                st.write("Invalid jump time format. Using default 00:00:00.")
+                                                jump_time_dt = None
 
-                                    # Play video from extracted time if video exists
-                                    if os.path.exists(h264_video_path):
-                                        st.video(h264_video_path, start_time=extracted_time_seconds + jump_seconds,
-                                                 format='video/mp4', autoplay=True)
+                                            if jump_time_dt:
+                                                jump_seconds = (jump_time_dt - extracted_time_dt).total_seconds()
+
+                                        # Play video from extracted time if video exists
+                                        if os.path.exists(h264_video_path):
+                                            st.video(h264_video_path, start_time=extracted_time_seconds + jump_seconds,
+                                                     format='video/mp4', autoplay=True)
+                                        else:
+                                            st.write("Error: Video file not found at:", h264_video_path)
                                     else:
-                                        st.write("Error: Video file not found at:", h264_video_path)
-                                else:
-                                    st.write("Extracted time is out of the valid range. Playing from the start.")
-                            except Exception as e:
-                                st.write("Error parsing time:", e, "Playing from the start.")
+                                        st.write("Extracted time is out of the valid range. Playing from the start.")
+                                except Exception as e:
+                                    st.write("Error parsing time:", e, "Playing from the start.")
+                            else:
+                                st.write("Time string is empty. Playing from the start.")
                         else:
-                            st.write("Time string is empty. Playing from the start.")
-                    else:
-                        st.write("No matching value found in the selected column. Playing from the start.")
+                            st.write("No matching value found in the selected column. Playing from the start.")
+                else:
+                    st.write("CSV file is empty.")
             else:
-                st.write("CSV file is empty.")
+                st.write("Could not retrieve initial or end time from the video.")
     else:
         st.write("Upload a video file to start.")
-
 
 if __name__ == "__main__":
     main()
