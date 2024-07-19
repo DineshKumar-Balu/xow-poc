@@ -28,6 +28,7 @@ def convert_to_h264(input_video_path, output_video_path):
 def get_time_from_frame(img):
     custom_config = r'--oem 3 --psm 6'
     text = pytesseract.image_to_string(img, config=custom_config)
+    st.write("OCR Output:", text)  # Debug: Show the OCR output
     pattern = re.compile(r'\d{2}:\d{2}:\d{2}')
     res = pattern.search(text)
     if res:
@@ -37,10 +38,11 @@ def get_time_from_frame(img):
 
 def get_initial_time(video_path):
     vid = cv2.VideoCapture(video_path)
-    vid.set(cv2.CAP_PROP_POS_FRAMES, 2)  # Start at the first frame
+    vid.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Start at the first frame
     is_success, img = vid.read()
     vid.release()
     if is_success:
+        st.image(img, caption="First Frame")  # Debug: Show the first frame
         return get_time_from_frame(img)
     return None
 
@@ -52,6 +54,7 @@ def get_video_end_time(video_path):
     is_success, img = vid.read()
     vid.release()
     if is_success:
+        st.image(img, caption="Last Frame")  # Debug: Show the last frame
         return get_time_from_frame(img)
     return None
 
@@ -81,13 +84,21 @@ def main():
         if uploaded_csv:
             df = pd.read_csv(uploaded_csv)
             initial_time = get_initial_time(h264_video_path)
-            st.write(initial_time)
+            st.write("Initial Time:", initial_time)
             end_time = get_video_end_time(h264_video_path)
-            st.write(end_time)
-            end_time_str = end_time
-            initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S') if initial_time else None
+            st.write("End Time:", end_time)
+            
+            if initial_time is not None:
+                initial_time_dt = datetime.strptime(initial_time, '%H:%M:%S')
+            else:
+                initial_time_dt = None
+            
+            if end_time is not None:
+                end_time_str = end_time
+            else:
+                end_time_str = None
 
-            if not df.empty:
+            if not df.empty and initial_time_dt and end_time_str:
                 col1, col2 = st.columns(2)
                 with col1:
                     column = st.selectbox('Select a column', df.columns.tolist(), index=0)
@@ -117,7 +128,7 @@ def main():
                                 extracted_time_dt = datetime.strptime(time_str, '%H:%M:%S')
 
                                 # Ensure the extracted time is within the valid range
-                                if initial_time_dt and extracted_time_dt and initial_time_dt <= extracted_time_dt <= datetime.strptime(end_time_str, '%H:%M:%S'):
+                                if initial_time_dt <= extracted_time_dt <= datetime.strptime(end_time_str, '%H:%M:%S'):
                                     extracted_time_seconds = (extracted_time_dt - initial_time_dt).total_seconds()
                                     jump_seconds = 0
                                     if initial_time and end_time:
@@ -141,7 +152,7 @@ def main():
 
                                         jump_time_dt = datetime.strptime(
                                             st.session_state.jump_time_input, '%H:%M:%S'
-                                        ) if st.session_state.jump_time_input else None
+                                        ) if st.session_state.jump_time_input else 0
 
                                         if jump_time_dt and jump_time_dt >= extracted_time_dt:
                                             jump_seconds = (jump_time_dt - extracted_time_dt).total_seconds()
@@ -161,7 +172,7 @@ def main():
                     else:
                         st.write("No matching value found in the selected column. Playing from the start.")
             else:
-                st.write("CSV file is empty.")
+                st.write("CSV file is empty or video time information is missing.")
     else:
         st.write("Upload a video file to start.")
 
