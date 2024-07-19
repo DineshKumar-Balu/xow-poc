@@ -7,6 +7,7 @@ import os
 import platform
 import subprocess
 from datetime import datetime, timedelta
+import numpy as np
 
 # Ensure the Tesseract path is correctly set
 if platform.system() == "Windows":
