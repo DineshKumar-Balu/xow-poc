@@ -28,12 +28,18 @@ def preprocess_frame(img):
     gray = cv2.fastNlMeansDenoising(gray, h=30)
     gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     gray = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=[255, 255, 255])
-    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return thresh
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    eroded = cv2.erode(thresh, kernel, iterations=1)
+    dilated = cv2.dilate(eroded, kernel, iterations=1)
+    adjusted = cv2.convertScaleAbs(dilated, alpha=1.5, beta=50)
+    return adjusted
 
 def get_time_from_frame(img):
     custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789:'
     processed_img = preprocess_frame(img)
+    st.image(processed_img, caption="Processed Frame for OCR")  # Debug: Show the processed frame
     text = pytesseract.image_to_string(processed_img, config=custom_config)
     st.write("OCR Output:", text)  # Debug: Show the OCR output
     pattern = re.compile(r'\d{2}:\d{2}:\d{2}')
