@@ -25,6 +25,20 @@ def convert_to_h264(input_video_path, output_video_path):
     subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
+@st.cache_data
+def process_video(uploaded_file):
+    os.makedirs("./assets", exist_ok=True)
+    video_path = "./assets/out.mp4"
+    h264_video_path = "./assets/out_h264.mp4"
+
+    with open(video_path, 'wb') as vid:
+        vid.write(uploaded_file.read())
+
+    convert_to_h264(video_path, h264_video_path)
+
+    return h264_video_path
+
+
 def get_time_from_frame(img):
     custom_config = r'--oem 3 --psm 6'
     text = pytesseract.image_to_string(img, config=custom_config)
@@ -62,14 +76,7 @@ def main():
     uploaded_file = st.file_uploader("Upload a video file (MP4, AVI, MOV)", type=["mp4", "avi", "mov"])
 
     if uploaded_file:
-        os.makedirs("./assets", exist_ok=True)
-        video_path = "./assets/out.mp4"
-        h264_video_path = "./assets/out_h264.mp4"
-
-        with open(video_path, 'wb') as vid:
-            vid.write(uploaded_file.read())
-
-        convert_to_h264(video_path, h264_video_path)
+        h264_video_path = process_video(uploaded_file)
 
         uploaded_csv = st.file_uploader("Upload a CSV file", type=["csv"])
 
