@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 # Ensure the Tesseract path is correctly set
 if platform.system() == "Windows":
-    pytesseract.pytesseract.tesseract_cmd = r"..\computer-visions\Tesseract-OCR\tesseract.exe"
+    pytesseract.pytesseract.tesseract_cmd = r".\computer-visions\Tesseract-OCR\tesseract.exe"
 else:
     pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
@@ -53,7 +53,7 @@ def get_video_end_time(video_path):
     return timestamp[1] if timestamp else "00:00:00 AM"
 
 def convert_to_h264(input_video_path, output_video_path):
-    ffmpeg_path = r"..\computer-visions\ffmpeg-7.0.1\bin\ffmpeg.exe"
+    ffmpeg_path = r".\computer-visions\ffmpeg-7.0.1\bin\ffmpeg.exe"
     command = [
         ffmpeg_path, '-y',
         '-i', input_video_path,
